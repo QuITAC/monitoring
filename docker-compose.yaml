@@ -1,0 +1,76 @@
+version: "3"
+
+networks:
+  loki:
+  prometheus:
+  proxy:
+    external: true
+
+volumes:
+  prometheus: {}
+  grafana: {}
+
+services:
+  loki:
+    # aggregates logs from promtail
+    image: grafana/loki:latest
+    expose:
+      - 3100
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - loki
+
+  promtail:
+    # queries the local system for logs and sends them to loki
+    image: grafana/promtail:latest
+    volumes:
+      - /var/log:/var/log
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - loki
+
+  grafana:
+    # displays the logs from loki and metrics from prometheus
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+      - ./datasources.yml:/etc/grafana/provisioning/ds.yaml
+      - grafana:/var/lib/grafana
+    entrypoint:
+      - sh -euc /run.sh
+    image: grafana/grafana:latest
+    expose:
+      - 3000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.queerreferat.ac`)"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+    networks:
+      - loki
+      - prometheus
+      - proxy
+
+  metrics_exporter:
+    # gathers metrics from the local system and sends them to prometheus
+    image: quay.io/prometheus/node-exporter:latest
+    command:
+      - '--path.rootfs=/host'
+    network_mode: host
+    pid: host
+    restart: unless-stopped
+    expose: -9100
+    volumes:
+      - '/:/host:ro,rslave'
+    networks:
+      - prometheus
+
+  prometheus:
+    # stores and aggregates metrics from metrics_exporter
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
