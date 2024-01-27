@@ -1,0 +1,11 @@
+#/etc/systemd/system/node-exporter.service
+[Unit]
+Desciption=Node exporter for Prometheus to collect system metrics
+
+[Service]
+ExecStart=/opt/node_exporter/node_exporter --web.listen-address=127.0.0.1:9100
+Type=exec 
+Restart=always
+
+[Install]
+WantedBy=default.target
