@@ -40,8 +40,16 @@ To view the logs run `sudo journalctl -e -u node-exporter`.
 
 Installation:
 ```bash
+# Download the latest binary from https://github.com/prometheus/node_exporter and place it into /opt/node_exporter/node_exporter
 cp node-exporter.service /etc/systemd/system/node-exporter.system
 sudo systemctl daemon-reload
 sudo systemctl start node-exporter.service
 sudo systemctl enable node-exporter.service
 ```
+
+### Prometheus
+Prometheus is a time-series database and will scrape it's targets in a given interval to collect metrics.
+There are various exporters for all sorts of things, right now we're just using the node exporter for Linux system metrics.
+Node exporter does not run in a container to avoid mounting the whole host file system, but as a systemd service instead.
+This means that Prometheus needs to be able to access node exporter running on the host system loopback interface.
+Therefore `host.docker.internal` is used and an additional rule in ufw is required to not block this traffic.
