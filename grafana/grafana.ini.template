@@ -1,3 +1,15 @@
-[security]
-admin_user=notset 
-admin_password=notset
+[server]
+root_url=https://grafana.queerreferat.ac/
+
+[auth]
+disable_login=true
+disable_login_form=true
+
+[auth.generic_oauth]
+client_id=FILL IN
+client_secret=FILL IN
+auth_url=https://sso.queerreferat.ac/application/o/authorize/
+api_url=https://sso.queerreferat.ac/application/o/userinfo/
+token_url=https://sso.queerreferat.ac/application/o/token/
+scopes=openid email
+enabled=true
